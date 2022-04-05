@@ -1,0 +1,31 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron:  '1 1 1 1'
+    # Runs once an hour
+
+  workflow_dispatch:  # click the button on Github repo!
+
+jobs:
+  sync_with_upstream:
+    runs-on: ubuntu-latest
+    name: Sync main with starter code
+
+    steps:
+      - name: "Checkout main"
+        uses: actions/checkout@v2
+        
+      - name: Pull (Fast-Forward) upstream changes
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: |
+          MY_PAT=${{ secrets.GITHUB_TOKEN }}
+          B64_PAT=$(printf "%s"":$MY_PAT" | base64)
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git checkout -b upstream
+          git -c http.extraHeader="Authorization: Basic ${B64_PAT}" pull -Xtheirs --allow-unrelated-histories https://github.com/ApolloPavilion/original.git main
+          git push -f origin upstream 
+          gh pr close upstream || true
+          gh pr create --title "Upstream changes" --body "Latest changes" || true
